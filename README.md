@@ -1,7 +1,7 @@
 # Cinemoji 🎬 Emojis Movie Guessing Game
 
 Cinemoji is a premium, interactive front-end trivia web game where players decode sets of emojis to guess famous movie titles. Built using pure semantic HTML5, modern CSS3 variables/transitions, and modular ES6 JavaScript, the app features fluid animations, custom synthesized sound effects, dark/light themes, and local statistics tracking.The game is Launched at https://sanjay-kumarrs.github.io/emoji_game/
-.
+
 ---
 
 ## ✨ Features
