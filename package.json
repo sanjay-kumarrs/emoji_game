@@ -1,0 +1,14 @@
+{
+  "name": "cinemoji",
+  "version": "1.0.0",
+  "description": "Premium movie-guessing trivia game using emojis.",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx -y live-server ./"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "live-server": "^1.2.1"
+  }
+}

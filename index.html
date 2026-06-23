@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cinemoji - Guess the Movie by Emoji</title>
+  <meta name="description" content="Play Cinemoji, the ultimate emoji movie guessing trivia game! Guess movie titles using emojis, challenge yourself in time attack mode, and climb the leaderboard.">
+  <link rel="stylesheet" href="style.css">
+  <!-- Pre-render theme verification script to avoid flash -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('cinemoji_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+</head>
+<body>
+  
+  <div id="app-container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="logo" id="logo-btn">
+        <span class="logo-emoji">🎬</span>
+        <span>Cinemoji</span>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Theme Toggle -->
+        <button class="btn-icon" id="theme-toggle" aria-label="Toggle Theme">
+          <svg viewBox="0 0 24 24" id="sun-icon">
+            <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.01c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
+          </svg>
+          <svg viewBox="0 0 24 24" id="moon-icon" style="display: none;">
+            <path d="M12.3 22h-.1c-5.5 0-10-4.5-10-10C2.2 6.8 6.4 2.5 11.7 2c.6 0 1 .5.8 1.1-.2.7-.3 1.5-.3 2.2 0 4.6 3.7 8.3 8.3 8.3.7 0 1.5-.1 2.2-.3.6-.2 1.2.3 1.1.8-.7 5.1-5 9-10.1 9.9-1.4.3-1 .3-1.4.3z"/>
+          </svg>
+        </button>
+        
+        <!-- Sound FX -->
+        <button class="btn-icon" id="sound-toggle" aria-label="Toggle Audio">
+          <svg viewBox="0 0 24 24" id="sound-on-icon">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+          </svg>
+          <svg viewBox="0 0 24 24" id="sound-off-icon" style="display: none;">
+            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+          </svg>
+        </button>
+        
+        <!-- Leaderboard -->
+        <button class="btn-icon" id="leaderboard-btn" aria-label="View Leaderboard">
+          <svg viewBox="0 0 24 24">
+            <path d="M16 11V3H8v6H3v12h18V11h-5zm-6-6h4v14h-4V5zm-5 6h3v8H5v-8zm14 8h-3v-6h3v6z"/>
+          </svg>
+        </button>
+        
+        <!-- Settings -->
+        <button class="btn-icon" id="settings-btn" aria-label="Open Settings">
+          <svg viewBox="0 0 24 24">
+            <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- SCREEN 1: WELCOME SCREEN -->
+    <main class="screen active" id="welcome-screen">
+      <div class="welcome-card">
+        <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">Cinemoji</h1>
+        <p class="tagline">Decode the emojis and guess the correct movie name. Test your pop culture knowledge!</p>
+        
+        <div class="welcome-emojis">
+          <span>🍿</span>
+          <span>🕵️‍♂️</span>
+          <span>🦖</span>
+          <span>🚀</span>
+        </div>
+        
+        <div class="input-group">
+          <label for="username">Player Name</label>
+          <input type="text" id="username" class="input-styled" placeholder="Enter your name..." maxlength="15" value="Player 1">
+        </div>
+        
+        <div class="mode-selection">
+          <div class="mode-card selected" id="mode-classic" data-mode="classic">
+            <span class="mode-icon">🏆</span>
+            <h3>Classic Mode</h3>
+            <p>Level by level progress. No time pressure.</p>
+          </div>
+          <div class="mode-card" id="mode-time-attack" data-mode="timeattack">
+            <span class="mode-icon">⏱️</span>
+            <h3>Time Attack</h3>
+            <p>60s survival. Correct answers give time bonus.</p>
+          </div>
+        </div>
+        
+        <button class="btn-primary" id="start-game-btn">
+          Play Now
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- SCREEN 2: GAME SCREEN -->
+    <main class="screen" id="game-screen">
+      
+      <!-- STATS DISPLAY -->
+      <div class="game-header">
+        <div class="stats-item" id="classic-stats">
+          <span class="level-badge" id="level-indicator">Level 1</span>
+        </div>
+        
+        <div class="stats-item timer" id="time-attack-stats" style="display: none;">
+          <span>⏱️</span>
+          <span id="timer-val">60s</span>
+        </div>
+        
+        <div class="stats-item coins">
+          <span>🪙</span>
+          <span id="coins-val">0</span>
+        </div>
+        
+        <div class="stats-item lives" id="lives-container">
+          <!-- Dynamically populated hearts -->
+        </div>
+      </div>
+
+      <!-- MAIN QUESTION CARD -->
+      <div class="question-card" id="question-card">
+        
+        <div class="genre-tag" id="genre-badge" style="visibility: hidden;">
+          🎬 <span id="genre-val">Genre</span>
+        </div>
+
+        <div class="emoji-display" id="emoji-display">
+          🍿🎥
+        </div>
+
+        <!-- Empty spots to click and fill -->
+        <div class="word-slots" id="word-slots">
+          <!-- Filled dynamically e.g. _ _ _   _ _ _ _ -->
+        </div>
+
+        <!-- Scrambled Letter bank -->
+        <div class="letter-bank" id="letter-bank">
+          <!-- Letter buttons -->
+        </div>
+
+        <!-- Manual Keyboard Input alternative -->
+        <div class="input-fallback-container" id="fallback-container">
+          <input type="text" id="manual-text-input" class="input-styled" placeholder="Type your guess here..." autofocus autocomplete="off">
+          <button class="btn-primary" id="manual-submit-btn" style="padding: 0.5rem 1.5rem; font-size: 1rem;">Go</button>
+        </div>
+
+      </div>
+
+      <!-- GAME ACTIONS (Bottom control) -->
+      <div class="game-actions">
+        <button class="btn-secondary" id="back-to-menu-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          </svg>
+          Exit
+        </button>
+        
+        <button class="btn-secondary" id="clear-letters-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+          Reset Letters
+        </button>
+      </div>
+      
+      <!-- HINT SHOP CARD -->
+      <div style="margin-top: 1rem; width: 100%;">
+        <div class="hint-container">
+          <button class="hint-btn" id="hint-genre-btn">
+            <span class="hint-icon">🏷️</span>
+            <span class="hint-label">Reveal Genre</span>
+            <span class="hint-cost" id="genre-cost-badge">15 Coins</span>
+          </button>
+          
+          <button class="hint-btn" id="hint-letter-btn">
+            <span class="hint-icon">💡</span>
+            <span class="hint-label">Fill One Letter</span>
+            <span class="hint-cost" id="letter-cost-badge">25 Coins</span>
+          </button>
+          
+          <button class="hint-btn" id="hint-skip-btn">
+            <span class="hint-icon">⏩</span>
+            <span class="hint-label">Skip Movie</span>
+            <span class="hint-cost" id="skip-cost-badge">50 Coins</span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+      <p>&copy; 2026 Cinemoji Trivia. Handcrafted with precision.</p>
+    </footer>
+
+    <!-- MODAL OVERLAYS -->
+    
+    <!-- 1. FEEDBACK MODAL (Success/Win/Lose transitions) -->
+    <div class="modal-overlay" id="feedback-modal">
+      <div class="modal-content">
+        <h2 class="modal-title" id="feedback-title">Correct!</h2>
+        <div class="modal-icon" id="feedback-icon">🎉</div>
+        <p id="feedback-msg" style="font-size: 1.1rem; color: var(--text-secondary);">You decoded the movie perfectly!</p>
+        
+        <div style="font-size: 1.3rem; font-weight: 700; margin: 0.5rem 0;" id="feedback-movie-details">
+          "The Lion King" (1994)
+        </div>
+        
+        <div style="display: flex; justify-content: center; gap: 1rem;" id="feedback-rewards">
+          <span style="color: var(--color-coin); font-weight: 700; font-size: 1.2rem;" id="feedback-coins-earned">+10 Coins</span>
+        </div>
+
+        <button class="btn-primary" id="feedback-next-btn" style="width: 100%; justify-content: center;">
+          Continue
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. GAME OVER MODAL -->
+    <div class="modal-overlay" id="gameover-modal">
+      <div class="modal-content">
+        <h2 class="modal-title" style="color: var(--color-error);">Game Over</h2>
+        <div class="modal-icon">💀</div>
+        <p id="gameover-msg" style="font-size: 1.1rem; color: var(--text-secondary);">You ran out of lives!</p>
+        
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-val" id="go-stat-score">0</span>
+            <span class="stat-lbl" id="go-stat-score-lbl">Score</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="go-stat-best">0</span>
+            <span class="stat-lbl">Best Streak</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+          <button class="btn-primary" id="go-restart-btn" style="width: 100%; justify-content: center;">
+            Try Again
+          </button>
+          <button class="btn-secondary" id="go-menu-btn" style="width: 100%; justify-content: center;">
+            Main Menu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. STATS & LEADERBOARD MODAL -->
+    <div class="modal-overlay" id="leaderboard-modal">
+      <div class="modal-content">
+        <button class="modal-close-btn" id="leaderboard-close" aria-label="Close Modal">&times;</button>
+        <h2 class="modal-title">Hall of Fame</h2>
+        <div class="modal-icon" style="font-size: 2.5rem; margin: 0;">🏆</div>
+        
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 0.5rem;">
+          <button class="btn-secondary" id="lb-tab-classic" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-color: var(--color-brand);">Classic</button>
+          <button class="btn-secondary" id="lb-tab-time" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Time Attack</button>
+        </div>
+
+        <div class="leaderboard-list" id="leaderboard-scores-container">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="stats-grid" style="border-top: 1px solid var(--bg-glass-border); padding-top: 1rem; margin-top: 0.5rem;">
+          <div class="stat-box">
+            <span class="stat-val" id="stats-total-solved">0</span>
+            <span class="stat-lbl">Solved</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="stats-total-coins">0</span>
+            <span class="stat-lbl">Total Coins</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. SETTINGS MODAL -->
+    <div class="modal-overlay" id="settings-modal">
+      <div class="modal-content" style="max-width: 400px; text-align: left;">
+        <button class="modal-close-btn" id="settings-close" aria-label="Close Modal">&times;</button>
+        <h2 class="modal-title" style="text-align: center; margin-bottom: 0.5rem;">Settings</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1rem;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="font-size: 1rem; font-weight: 600;">Text Keyboard Mode</h4>
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">Type guesses with physical keyboard instead of letter buttons</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="keyboard-toggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="font-size: 1rem; font-weight: 600;">Sound Effects</h4>
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">Enable synthesized gameplay sound effects</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="sound-checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          
+          <div style="border-top: 1px solid var(--bg-glass-border); padding-top: 1.25rem;">
+            <h4 style="font-size: 1rem; font-weight: 600; color: var(--color-error); margin-bottom: 0.25rem;">Reset Progress</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">This will permanently clear your coins, current level, and local statistics.</p>
+            <button class="btn-secondary" id="reset-game-data-btn" style="color: var(--color-error); border-color: var(--color-error); width: 100%; justify-content: center; background: rgba(255, 0, 0, 0.05);">
+              Reset All Saved Data
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="movies.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
