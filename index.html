@@ -75,21 +75,37 @@
           <span>🚀</span>
         </div>
         
-        <div class="input-group">
+        <div class="input-group" id="single-player-name-group">
           <label for="username">Player Name</label>
           <input type="text" id="username" class="input-styled" placeholder="Enter your name..." maxlength="15" value="Player 1">
+        </div>
+        
+        <div class="input-group" id="multiplayer-names-group" style="display: none; flex-direction: column; gap: 1rem; max-width: 380px; width: 100%; margin: 0 auto; text-align: left;">
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <label for="username-p1" style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); padding-left: 0.5rem;">Player 1 Name</label>
+            <input type="text" id="username-p1" class="input-styled" placeholder="Player 1" maxlength="15" value="Player 1">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <label for="username-p2" style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); padding-left: 0.5rem;">Player 2 Name</label>
+            <input type="text" id="username-p2" class="input-styled" placeholder="Player 2" maxlength="15" value="Player 2">
+          </div>
         </div>
         
         <div class="mode-selection">
           <div class="mode-card selected" id="mode-classic" data-mode="classic">
             <span class="mode-icon">🏆</span>
             <h3>Classic Mode</h3>
-            <p>Level by level progress. No time pressure.</p>
+            <p>Level progress. No time pressure.</p>
           </div>
           <div class="mode-card" id="mode-time-attack" data-mode="timeattack">
             <span class="mode-icon">⏱️</span>
             <h3>Time Attack</h3>
-            <p>60s survival. Correct answers give time bonus.</p>
+            <p>60s survival. Fast answers add time.</p>
+          </div>
+          <div class="mode-card" id="mode-multiplayer" data-mode="multiplayer">
+            <span class="mode-icon">👥</span>
+            <h3>Local Versus</h3>
+            <p>2 players take turns. Timer & pass option.</p>
           </div>
         </div>
         
@@ -116,7 +132,18 @@
           <span id="timer-val">60s</span>
         </div>
         
-        <div class="stats-item coins">
+        <!-- Multiplayer turn and status indicators -->
+        <div class="stats-item" id="multiplayer-stats" style="display: none; width: 100%; justify-content: space-between; align-items: center; gap: 0.5rem;">
+          <div class="active-player-badge p1-active" id="mp-active-player">P1 Turn</div>
+          <div class="round-badge level-badge" id="mp-round-indicator" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--bg-glass-border);">Round 1/5</div>
+          <div class="mp-scoreboard" id="mp-scoreboard" style="font-weight: 700; font-size: 1rem;">P1: 0 | P2: 0</div>
+          <div class="stats-item timer" id="mp-timer-container">
+            <span>⏱️</span>
+            <span id="mp-timer-val">30s</span>
+          </div>
+        </div>
+        
+        <div class="stats-item coins" id="single-player-coins">
           <span>🪙</span>
           <span id="coins-val">0</span>
         </div>
@@ -169,6 +196,10 @@
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
           </svg>
           Reset Letters
+        </button>
+
+        <button class="btn-primary" id="pass-turn-btn" style="display: none; padding: 0.75rem 1.5rem; font-size: 1rem;">
+          Pass ➡️
         </button>
       </div>
       
