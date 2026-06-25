@@ -8,7 +8,8 @@ Cinemoji is a premium, interactive front-end trivia web game where players decod
 
 - **🏆 Classic Mode**: Progress through level-based sets of movies with increasing difficulty. Earn coins and level up.
 - **⏱️ Time Attack**: Face a ticking clock in a 60-second survival mode where correct answers reward bonus time and mistakes penalize.
-- **💡 Rich Hint Shop**: Use earned coins to unlock hints:
+- **👥 Local Versus**: 2 players take turns solving the same series of movie clues on a single device. Features a 30-second turn timer, pass option, active turn badges, and a post-game match summary scoreboard.
+- **💡 Rich Hint Shop**: Use earned coins to unlock hints (Classic/Time Attack modes only):
   - *Reveal Genre & Year* (15 Coins)
   - *Fill One Letter* (25 Coins)
   - *Skip Movie* (50 Coins - Classic Mode only)
