@@ -169,7 +169,17 @@ const state = {
   
   // Timer Reference
   timerInterval: null,
-  levelStartTime: 0
+  levelStartTime: 0,
+
+  // Multiplayer Mode State
+  mpPlayer1Name: "Player 1",
+  mpPlayer2Name: "Player 2",
+  mpScores: [0, 0],
+  mpActivePlayerIndex: 0,
+  mpRound: 1,
+  mpMaxRounds: 5,
+  mpTimerRemaining: 30,
+  mpMovies: []
 };
 
 // DOM Elements
@@ -213,6 +223,7 @@ const DOM = {
   hintGenreBtn: document.getElementById('hint-genre-btn'),
   hintLetterBtn: document.getElementById('hint-letter-btn'),
   hintSkipBtn: document.getElementById('hint-skip-btn'),
+  hintContainerWrapper: document.querySelector('.hint-container') ? document.querySelector('.hint-container').parentElement : null,
   
   // Theme Icons
   sunIcon: document.getElementById('sun-icon'),
@@ -249,7 +260,17 @@ const DOM = {
   settingsClose: document.getElementById('settings-close'),
   keyboardToggle: document.getElementById('keyboard-toggle'),
   soundCheckbox: document.getElementById('sound-checkbox'),
-  resetGameDataBtn: document.getElementById('reset-game-data-btn')
+  resetGameDataBtn: document.getElementById('reset-game-data-btn'),
+
+  // Multiplayer Elements
+  modeMultiplayer: document.getElementById('mode-multiplayer'),
+  multiplayerStats: document.getElementById('multiplayer-stats'),
+  mpActivePlayer: document.getElementById('mp-active-player'),
+  mpRoundIndicator: document.getElementById('mp-round-indicator'),
+  mpScoreboard: document.getElementById('mp-scoreboard'),
+  mpTimerVal: document.getElementById('mp-timer-val'),
+  singlePlayerCoins: document.getElementById('single-player-coins'),
+  passTurnBtn: document.getElementById('pass-turn-btn')
 };
 
 // Initialize App
@@ -305,6 +326,20 @@ function loadSavedState() {
       console.error(e);
     }
   }
+
+  // Load multiplayer names
+  const savedMpP1 = localStorage.getItem('cinemoji_mp_p1');
+  if (savedMpP1) {
+    state.mpPlayer1Name = savedMpP1;
+    const p1Input = document.getElementById('username-p1');
+    if (p1Input) p1Input.value = savedMpP1;
+  }
+  const savedMpP2 = localStorage.getItem('cinemoji_mp_p2');
+  if (savedMpP2) {
+    state.mpPlayer2Name = savedMpP2;
+    const p2Input = document.getElementById('username-p2');
+    if (p2Input) p2Input.value = savedMpP2;
+  }
 }
 
 // Save crucial progress data
@@ -316,6 +351,9 @@ function saveProgress() {
   localStorage.setItem('cinemoji_total_solved', state.totalSolvedAllTime);
   localStorage.setItem('cinemoji_total_coins', state.totalCoinsAllTime);
   localStorage.setItem('cinemoji_leaderboards', JSON.stringify(state.leaderboards));
+  
+  localStorage.setItem('cinemoji_mp_p1', state.mpPlayer1Name);
+  localStorage.setItem('cinemoji_mp_p2', state.mpPlayer2Name);
 }
 
 // Add event handlers
@@ -340,33 +378,70 @@ function setupEventListeners() {
     sfx.playClick();
   });
   
+  // Mode selection helper
+  function selectGameMode(mode) {
+    state.currentMode = mode;
+    DOM.modeClassic.classList.toggle('selected', mode === 'classic');
+    DOM.modeTimeAttack.classList.toggle('selected', mode === 'timeattack');
+    DOM.modeMultiplayer.classList.toggle('selected', mode === 'multiplayer');
+    
+    const singleGroup = document.getElementById('single-player-name-group');
+    const multiGroup = document.getElementById('multiplayer-names-group');
+    if (mode === 'multiplayer') {
+      singleGroup.style.display = 'none';
+      multiGroup.style.display = 'flex';
+    } else {
+      singleGroup.style.display = 'flex';
+      multiGroup.style.display = 'none';
+    }
+  }
+
   // Welcome page mode pickers
   DOM.modeClassic.addEventListener('click', () => {
     sfx.playClick();
-    state.currentMode = 'classic';
-    DOM.modeClassic.classList.add('selected');
-    DOM.modeTimeAttack.classList.remove('selected');
+    selectGameMode('classic');
   });
   
   DOM.modeTimeAttack.addEventListener('click', () => {
     sfx.playClick();
-    state.currentMode = 'timeattack';
-    DOM.modeTimeAttack.classList.add('selected');
-    DOM.modeClassic.classList.remove('selected');
+    selectGameMode('timeattack');
+  });
+
+  DOM.modeMultiplayer.addEventListener('click', () => {
+    sfx.playClick();
+    selectGameMode('multiplayer');
   });
   
   // Start game click
   DOM.startGameBtn.addEventListener('click', () => {
     sfx.playClick();
-    const nameVal = DOM.usernameInput.value.trim();
-    state.playerName = nameVal || "Player 1";
-    saveProgress();
+    if (state.currentMode === 'multiplayer') {
+      const p1Input = document.getElementById('username-p1');
+      const p2Input = document.getElementById('username-p2');
+      state.mpPlayer1Name = p1Input.value.trim() || "Player 1";
+      state.mpPlayer2Name = p2Input.value.trim() || "Player 2";
+      saveProgress();
+    } else {
+      const nameVal = DOM.usernameInput.value.trim();
+      state.playerName = nameVal || "Player 1";
+      saveProgress();
+    }
     
     // Switch Screen
     DOM.welcomeScreen.classList.remove('active');
     DOM.gameScreen.classList.add('active');
     
     startGameSession();
+  });
+
+  // Pass turn button in multiplayer
+  DOM.passTurnBtn.addEventListener('click', () => {
+    sfx.playClick();
+    if (state.currentMode === 'multiplayer') {
+      clearInterval(state.timerInterval);
+      const activePlayerName = state.mpActivePlayerIndex === 0 ? state.mpPlayer1Name : state.mpPlayer2Name;
+      showFeedbackModalMp('pass', activePlayerName);
+    }
   });
   
   // Exit back to menu
@@ -458,7 +533,11 @@ function setupEventListeners() {
   DOM.feedbackNextBtn.addEventListener('click', () => {
     sfx.playClick();
     DOM.feedbackModal.classList.remove('active');
-    loadNextMovie();
+    if (state.currentMode === 'multiplayer') {
+      nextMpTurn();
+    } else {
+      loadNextMovie();
+    }
   });
   
   // Game over screen interactions
@@ -521,10 +600,31 @@ function startGameSession() {
   state.streak = 0;
   state.lives = 3;
   
+  // Reset visibility states and modal formatting
+  DOM.multiplayerStats.style.display = 'none';
+  DOM.passTurnBtn.style.display = 'none';
+  DOM.singlePlayerCoins.style.display = 'flex';
+  if (DOM.hintContainerWrapper) DOM.hintContainerWrapper.style.display = 'block';
+  
+  // Reset Game Over modal to standard values
+  const modalTitle = DOM.gameOverModal.querySelector('.modal-title');
+  if (modalTitle) {
+    modalTitle.textContent = "Game Over";
+    modalTitle.style.color = "var(--color-error)";
+  }
+  const modalIcon = DOM.gameOverModal.querySelector('.modal-icon');
+  if (modalIcon) {
+    modalIcon.textContent = "💀";
+  }
+  if (DOM.goStatScoreLbl) DOM.goStatScoreLbl.textContent = "Score";
+  const bestLabel = DOM.goStatBest.nextElementSibling;
+  if (bestLabel) bestLabel.textContent = "Best Streak";
+
   // Setup movies array for classic level
   if (state.currentMode === 'classic') {
     DOM.classicStats.style.display = 'block';
     DOM.timeAttackStats.style.display = 'none';
+    DOM.livesContainer.style.display = 'flex';
     
     // Classic level selection
     // Randomize the movies list but keep seed based on progress or simple random
@@ -538,10 +638,11 @@ function startGameSession() {
     
     state.activeMovieIndex = state.classicLevel;
     state.activeMovie = state.shuffledClassicMovies[state.activeMovieIndex];
-  } else {
+  } else if (state.currentMode === 'timeattack') {
     // Time Attack
     DOM.classicStats.style.display = 'none';
     DOM.timeAttackStats.style.display = 'block';
+    DOM.livesContainer.style.display = 'none';
     state.timeRemaining = 60;
     DOM.timerVal.textContent = `${state.timeRemaining}s`;
     DOM.timerVal.classList.remove('timer-warn');
@@ -552,6 +653,32 @@ function startGameSession() {
     // Start countdown timer
     clearInterval(state.timerInterval);
     state.timerInterval = setInterval(updateCountdown, 1000);
+  } else if (state.currentMode === 'multiplayer') {
+    // Local Versus Multiplayer
+    DOM.classicStats.style.display = 'none';
+    DOM.timeAttackStats.style.display = 'none';
+    DOM.livesContainer.style.display = 'none';
+    DOM.singlePlayerCoins.style.display = 'none';
+    if (DOM.hintContainerWrapper) DOM.hintContainerWrapper.style.display = 'none';
+    
+    DOM.multiplayerStats.style.display = 'flex';
+    DOM.passTurnBtn.style.display = 'inline-flex';
+    
+    // Setup multiplayer specific parameters
+    state.mpScores = [0, 0];
+    state.mpActivePlayerIndex = 0;
+    state.mpRound = 1;
+    state.mpTimerRemaining = 30;
+    
+    // Choose movies for multiplayer session
+    selectMultiplayerMovies();
+    
+    DOM.mpTimerVal.textContent = `${state.mpTimerRemaining}s`;
+    DOM.mpTimerVal.classList.remove('timer-warn');
+    updateMpScoreboard();
+    
+    clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(updateMpCountdown, 1000);
   }
   
   // Load UI for current movie
@@ -616,6 +743,13 @@ function exitGameSession() {
   clearInterval(state.timerInterval);
   DOM.gameScreen.classList.remove('active');
   DOM.welcomeScreen.classList.add('active');
+  
+  // Reset visibility states
+  DOM.multiplayerStats.style.display = 'none';
+  DOM.passTurnBtn.style.display = 'none';
+  DOM.singlePlayerCoins.style.display = 'flex';
+  DOM.livesContainer.style.display = 'flex';
+  if (DOM.hintContainerWrapper) DOM.hintContainerWrapper.style.display = 'block';
 }
 
 // Build question card displays
@@ -640,6 +774,20 @@ function loadMovieBoard() {
   if (state.currentMode === 'classic') {
     DOM.levelIndicator.textContent = `Level ${state.classicLevelSolved + 1}`;
     updateLivesUI();
+  } else if (state.currentMode === 'multiplayer') {
+    // Update active player badge and round indicator
+    const activeBadge = DOM.mpActivePlayer;
+    const pName = state.mpActivePlayerIndex === 0 ? state.mpPlayer1Name : state.mpPlayer2Name;
+    activeBadge.textContent = `${pName}'s Turn`;
+    
+    if (state.mpActivePlayerIndex === 0) {
+      activeBadge.className = 'active-player-badge p1-active';
+    } else {
+      activeBadge.className = 'active-player-badge p2-active';
+    }
+    
+    DOM.mpRoundIndicator.textContent = `Round ${state.mpRound}/${state.mpMaxRounds}`;
+    updateMpScoreboard();
   }
   
   // Build Letter Slots & Clean tracking
@@ -831,7 +979,11 @@ function checkSubmitProgress() {
     const correctNormalized = state.activeMovie.title.toUpperCase().replace(/[^A-Z0-9]/g, '');
     
     if (finalGuess === correctNormalized) {
-      handleCorrectGuess();
+      if (state.currentMode === 'multiplayer') {
+        handleCorrectGuessMp();
+      } else {
+        handleCorrectGuess();
+      }
     } else {
       handleIncorrectGuess();
     }
@@ -847,7 +999,11 @@ function checkManualTextGuess() {
   
   if (typed === correctNormalized) {
     DOM.manualTextInput.value = '';
-    handleCorrectGuess();
+    if (state.currentMode === 'multiplayer') {
+      handleCorrectGuessMp();
+    } else {
+      handleCorrectGuess();
+    }
   } else {
     DOM.manualTextInput.value = '';
     handleIncorrectGuess();
@@ -1220,6 +1376,162 @@ function getBestScore(mode) {
   const scores = state.leaderboards[mode] || [];
   if (scores.length === 0) return 0;
   return Math.max(...scores.map(s => s.score));
+}
+
+// --- Local Multiplayer (Versus) Helper Functions ---
+
+function selectMultiplayerMovies() {
+  const temp = [...movies];
+  // Simple Fisher-Yates shuffle
+  for (let i = temp.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [temp[i], temp[j]] = [temp[j], temp[i]];
+  }
+  // Store 10 movies for 5 rounds (each player plays 5 movies)
+  state.mpMovies = temp.slice(0, state.mpMaxRounds * 2);
+  state.activeMovie = state.mpMovies[0];
+  state.activeMovieIndex = 0;
+}
+
+function updateMpCountdown() {
+  state.mpTimerRemaining--;
+  if (state.mpTimerRemaining <= 0) {
+    state.mpTimerRemaining = 0;
+    DOM.mpTimerVal.textContent = "0s";
+    clearInterval(state.timerInterval);
+    
+    // Time out
+    const activePlayerName = state.mpActivePlayerIndex === 0 ? state.mpPlayer1Name : state.mpPlayer2Name;
+    showFeedbackModalMp('timeout', activePlayerName);
+  } else {
+    DOM.mpTimerVal.textContent = `${state.mpTimerRemaining}s`;
+    if (state.mpTimerRemaining <= 5) {
+      DOM.mpTimerVal.classList.add('timer-warn');
+      sfx.playTone(400, 'sine', 0.08, 0, 0.05); // tick tone
+    } else {
+      DOM.mpTimerVal.classList.remove('timer-warn');
+    }
+  }
+}
+
+function handleCorrectGuessMp() {
+  clearInterval(state.timerInterval);
+  state.mpScores[state.mpActivePlayerIndex]++;
+  updateMpScoreboard();
+  
+  const activePlayerName = state.mpActivePlayerIndex === 0 ? state.mpPlayer1Name : state.mpPlayer2Name;
+  showFeedbackModalMp('success', activePlayerName);
+}
+
+function updateMpScoreboard() {
+  DOM.mpScoreboard.innerHTML = `
+    <span style="color: var(--color-brand); font-weight: bold;">${state.mpPlayer1Name}: ${state.mpScores[0]}</span>
+    <span style="color: var(--text-secondary); margin: 0 0.25rem;">vs</span>
+    <span style="color: var(--color-accent); font-weight: bold;">${state.mpPlayer2Name}: ${state.mpScores[1]}</span>
+  `;
+}
+
+function showFeedbackModalMp(type, playerName) {
+  DOM.feedbackCoinsEarned.style.display = 'none';
+  
+  let detailsText = `"${state.activeMovie.title}" (${state.activeMovie.year})`;
+  DOM.feedbackMovieDetails.textContent = detailsText;
+  
+  if (type === 'success') {
+    sfx.playSuccess();
+    launchConfetti();
+    DOM.feedbackTitle.textContent = "Correct!";
+    DOM.feedbackTitle.style.color = "var(--color-success)";
+    DOM.feedbackIcon.textContent = "🎉";
+    DOM.feedbackMsg.textContent = `${playerName} guessed it correctly and gets 1 point!`;
+  } else if (type === 'pass') {
+    sfx.playClick();
+    DOM.feedbackTitle.textContent = "Passed!";
+    DOM.feedbackTitle.style.color = "var(--color-warning)";
+    DOM.feedbackIcon.textContent = "⏩";
+    DOM.feedbackMsg.textContent = `${playerName} passed this turn.`;
+  } else if (type === 'timeout') {
+    sfx.playFail();
+    DOM.feedbackTitle.textContent = "Time's Up!";
+    DOM.feedbackTitle.style.color = "var(--color-error)";
+    DOM.feedbackIcon.textContent = "⏰";
+    DOM.feedbackMsg.textContent = `${playerName} ran out of time.`;
+  }
+  
+  DOM.feedbackModal.classList.add('active');
+}
+
+function nextMpTurn() {
+  clearInterval(state.timerInterval);
+  state.activeMovieIndex++;
+  
+  if (state.activeMovieIndex >= state.mpMaxRounds * 2) {
+    handleMpGameOver();
+    return;
+  }
+  
+  state.mpActivePlayerIndex = state.activeMovieIndex % 2;
+  state.mpRound = Math.floor(state.activeMovieIndex / 2) + 1;
+  state.activeMovie = state.mpMovies[state.activeMovieIndex];
+  
+  loadMovieBoard();
+  
+  state.mpTimerRemaining = 30;
+  DOM.mpTimerVal.textContent = `${state.mpTimerRemaining}s`;
+  DOM.mpTimerVal.classList.remove('timer-warn');
+  
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(updateMpCountdown, 1000);
+}
+
+function handleMpGameOver() {
+  sfx.playWinGame();
+  
+  const p1 = state.mpPlayer1Name;
+  const p2 = state.mpPlayer2Name;
+  const s1 = state.mpScores[0];
+  const s2 = state.mpScores[1];
+  
+  let titleText = "";
+  let msgText = "";
+  let icon = "🏆";
+  
+  if (s1 > s2) {
+    titleText = `${p1} Wins!`;
+    msgText = `${p1} defeated ${p2} by ${s1} to ${s2}!`;
+    icon = "👑";
+  } else if (s2 > s1) {
+    titleText = `${p2} Wins!`;
+    msgText = `${p2} defeated ${p1} by ${s2} to ${s1}!`;
+    icon = "👑";
+  } else {
+    titleText = "It's a Tie!";
+    msgText = `Both players scored ${s1} points. What a close game!`;
+    icon = "🤝";
+  }
+  
+  DOM.gameOverMsg.textContent = msgText;
+  DOM.goStatScore.textContent = s1;
+  if (DOM.goStatScoreLbl) DOM.goStatScoreLbl.textContent = `${p1} Score`;
+  
+  DOM.goStatBest.textContent = s2;
+  const bestLabel = DOM.goStatBest.nextElementSibling;
+  if (bestLabel) {
+    bestLabel.textContent = `${p2} Score`;
+  }
+  
+  const modalTitle = DOM.gameOverModal.querySelector('.modal-title');
+  if (modalTitle) {
+    modalTitle.textContent = titleText;
+    modalTitle.style.color = "var(--color-brand)";
+  }
+  
+  const modalIcon = DOM.gameOverModal.querySelector('.modal-icon');
+  if (modalIcon) {
+    modalIcon.textContent = icon;
+  }
+  
+  DOM.gameOverModal.classList.add('active');
 }
 
 // Load initialization
