@@ -297,10 +297,10 @@ header {
 
 .mode-selection {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 1.25rem;
   width: 100%;
-  max-width: 500px;
+  max-width: 650px;
   margin: 0 auto;
 }
 
@@ -983,3 +983,56 @@ input:checked + .slider:before {
     gap: 0.6rem;
   }
 }
+
+/* Multiplayer Modes Elements */
+.active-player-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-inverse);
+  transition: all var(--transition-fast);
+}
+
+.active-player-badge.p1-active {
+  background: var(--color-brand);
+  box-shadow: 0 0 10px var(--color-brand-glow);
+}
+
+.active-player-badge.p2-active {
+  background: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent-glow);
+}
+
+#pass-turn-btn {
+  background: linear-gradient(135deg, var(--color-warning), var(--color-accent));
+}
+
+#pass-turn-btn:hover {
+  box-shadow: var(--shadow-lg), 0 8px 16px var(--color-accent-glow);
+  filter: brightness(1.05);
+}
+
+.mp-scoreboard {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-glass-border);
+  padding: 0.4rem 1.25rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 550px) {
+  #multiplayer-stats {
+    flex-wrap: wrap;
+    justify-content: center !important;
+    gap: 0.6rem !important;
+  }
+  .mode-selection {
+    grid-template-columns: 1fr !important;
+  }
+}
+
